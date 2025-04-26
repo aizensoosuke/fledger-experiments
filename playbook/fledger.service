@@ -10,7 +10,7 @@ ExecStart=/root/fledger \
     --disable-turn-stun \
     --signal-url ws://${CENTRAL_HOST}:8765 \
     -v \
-    ${NODE_CMD}
+    NODECMD
 RemainAfterExit=yes
 Restart=no
 User=root

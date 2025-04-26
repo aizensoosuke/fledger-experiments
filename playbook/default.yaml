@@ -18,11 +18,11 @@
   become: true
   tasks:
     - name: Stop nodes
-      ansible.builtin.script: ../playbook/stopnodes.sh
+      ansible.builtin.script: ../playbook/scripts/stop-nodes.sh
 
     - name: Copy files
       ansible.builtin.copy:
-        src: ~/fledger
+        src: "{{ item }}"
         dest: ~/
         mode: preserve
       loop:
@@ -47,7 +47,15 @@
         state: present
         reload: true
 
-    - name: Copy binaries
+    - name: Stop central
+      ansible.builtin.script: ../playbook/scripts/stop-central.sh
+      register: out
+
+    - name: Debug stop
+      ansible.builtin.debug:
+        msg: "{{ out.stdout_lines }}"
+
+    - name: Copy files
       ansible.builtin.copy:
         src: "{{ item }}"
         dest: ~/
@@ -55,40 +63,17 @@
       loop:
         - ~/fledger
         - ~/flsignal
+        - ../playbook/flsignal.service
+        - ../playbook/flrealm.service
+        - env.systemd
 
-    - name: Copy services
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: /etc/systemd/system/
-        mode: preserve
-      loop:
-        - flsignal.service
-        - flrealm.service
+    - name: Start central
+      ansible.builtin.script: ../playbook/scripts/start-central.sh
+      register: out
 
-    - name: Stop services
-      ansible.builtin.systemd_service:
-        name: "{{ item }}"
-        state: stopped
-        daemon_reload: true
-      loop:
-        - flsignal
-        - flrealm
-
-    - name: Remove logs
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /var/log/flsignal
-        - /var/log/flrealm
-
-    - name: Start services
-      ansible.builtin.systemd_service:
-        name: "{{ item }}"
-        state: restarted
-      loop:
-        - flsignal
-        - flrealm
+    - name: Debug start
+      ansible.builtin.debug:
+        msg: "{{ out.stdout_lines }}"
 
 - name: Run the simulation
   hosts: nodes
@@ -96,10 +81,10 @@
   timeout: 10 # 300
   tasks:
     - name: Start nodes
-      ansible.builtin.script: ../playbook/startnodes.sh
+      ansible.builtin.script: ../playbook/scripts/start-nodes.sh
 
     - name: Wait for simulation end
-      ansible.builtin.script: ../playbook/waitnodes.sh
+      ansible.builtin.script: ../playbook/scripts/wait-nodes.sh
 
 
 # Must remain separate so it runs even if the simulation fails
@@ -107,17 +92,14 @@
   hosts: nodes
   become: true
   tasks:
-    - name: Find fledger services
-      ansible.builtin.find:
-        paths: ~/env.systemd
-      register: fledger_services
+    - name: Assemble metrics on node
+      ansible.builtin.script: ../playbook/scripts/assemble-metrics.sh
 
     - name: Download metrics
       ansible.builtin.fetch:
-        src: "/tmp/{{ item.path | basename }}.metrics"
+        src: "~/{{ inventory_hostname }}.metrics"
         flat: true
-        dest: "metrics/"
-      loop: "{{ fledger_services | dict2items }}"
+        dest: "../metrics/"
 
 - name: Assemble metrics into one file
   hosts: 127.0.0.1
@@ -125,6 +107,6 @@
   tasks:
     - name: Assemble metrics
       ansible.builtin.assemble:
-        src: metrics
-        dest: assembled.metrics
+        src: ../metrics
+        dest: ../assembled.metrics
         mode: "644"

@@ -3,11 +3,11 @@
 # CHANGE THESE
 project="fledger"
 username="abehsser"
+repo="$HOME/fledger/fledger-sphere/" # this is the sphere repo containing model.py
 # END CHANGE THESE
 
 network="$1"
-path="$HOME/fledger/experiments/$1"
-repo="$HOME/fledger/sphere/"
+path="./$1"
 model="$path/model.py"
 
 base=$(basename "$network")

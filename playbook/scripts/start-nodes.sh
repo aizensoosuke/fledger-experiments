@@ -16,8 +16,10 @@ for instance in $instances; do
 
   envfile="$HOME/env.systemd/$instance"
   logfile="/var/log/$instance"
+  nodecmd=$(grep -e "NODE_CMD=" "$envfile" | sed -e 's/NODE_CMD=//')
 
   sed -e "s%ENVFILE%$envfile%" "$HOME/fledger.service" |
+    sed -e "s%NODECMD%$nodecmd%" |
     sed -e "s%LOGFILE%$logfile%" >"$path" || exit 1
 done
 
