@@ -51,10 +51,6 @@
       ansible.builtin.script: ../playbook/scripts/stop-central.sh
       register: out
 
-    - name: Debug stop
-      ansible.builtin.debug:
-        msg: "{{ out.stdout_lines }}"
-
     - name: Copy files
       ansible.builtin.copy:
         src: "{{ item }}"
@@ -71,14 +67,10 @@
       ansible.builtin.script: ../playbook/scripts/start-central.sh
       register: out
 
-    - name: Debug start
-      ansible.builtin.debug:
-        msg: "{{ out.stdout_lines }}"
-
 - name: Run the simulation
   hosts: nodes
   become: true
-  timeout: 10 # 300
+  timeout: 300
   tasks:
     - name: Start nodes
       ansible.builtin.script: ../playbook/scripts/start-nodes.sh

@@ -56,7 +56,7 @@ echo "    SUCCESS: revision $revision created."
 
 echo "[REALIZATION]"
 echo "    Checking if $realizeas exists..."
-mrg show realization "$realizeas" >/dev/null 2>&1
+mrg show realization "$realizeas"
 if test $? -eq 0; then
   echo "    Realization exists, we must RELINQUISH it to continue."
   read -r -p "    Continue (y/n)? " choice
@@ -78,12 +78,12 @@ if test $? -eq 0; then
 fi
 
 echo "    Realize model as $realizeas..."
-mrg realize "$realizeas" revision "$revision" || exit 1
+mrg realize "$realizeas" revision "$revision" --disable-progress || exit 1
 echo "    SUCCESS: realization created"
 
 echo "[MATERIALIZATION]"
 echo "    Materialize model as $materializeas..."
-mrg mat "$materializeas" --sync || exit 1
+mrg mat "$materializeas" --sync --disable-progress || exit 1
 
 count=0
 while test -z "$success"; do

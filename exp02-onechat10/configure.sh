@@ -1,7 +1,5 @@
 #!/bin/bash
 
-signalhost="10.0.0.1"
-
 mkdir -p env.systemd
 
 messages=()
@@ -13,17 +11,23 @@ done
 
 for i in $(seq 0 9); do
   j=$((("$i" + 2) % 10))
-  n=$(("$i" + 97))
-  nodename=$(echo $n | awk '{printf("%c",$1)}')
-  envfile="env.systemd/${nodename}.env"
+  nodename="n${i}"
+
+  mkdir -p "env.systemd/$nodename"
+  envfile="env.systemd/${nodename}/fledger-${nodename}-0"
+
   send_msg="${messages[$j]}"
   recv_msg="${messages[$i]}"
-  echo "FLEDGER_FLSIGNAL_HOST=${signalhost}" >"$envfile"
-  echo "FLEDGER_SEND_MSG=${send_msg}" >>"$envfile"
-  echo "FLEDGER_RECV_MSG=${recv_msg}" >>"$envfile"
-  echo "FLEDGER_NODE_NAME=${nodename}" >>"$envfile"
 
-  echo "[node $nodename]"
-  echo "    <- ${recv_msg} [$i]"
-  echo "    -> ${send_msg} [$j]"
+  {
+    echo "CENTRAL_HOST=10.0.0.128"
+    echo "NODE_NAME=fledger-${nodename}-0"
+    echo "NODE_CMD=simulation --print-new-messages chat --recv-msg '$recv_msg' --send-msg '$send_msg'"
+    echo "WAIT=true"
+  } >"$envfile"
 done
+
+{
+  echo "FLSIGNAL=true"
+  echo "FLREALM=false"
+} >"env.systemd/central"
