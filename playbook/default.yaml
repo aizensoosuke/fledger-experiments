@@ -61,7 +61,7 @@
         - ~/flsignal
         - ../playbook/flsignal.service
         - ../playbook/flrealm.service
-        - env.systemd
+        - env.systemd/central
 
     - name: Start central
       ansible.builtin.script: ../playbook/scripts/start-central.sh

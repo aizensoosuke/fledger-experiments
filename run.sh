@@ -55,3 +55,9 @@ make
 
 echo "[run experiment]"
 ssh -tt fledger "bash -c 'cd experiments && source /home/abehsser/.bash_profile && exp $exp'"
+
+echo "[download metrics]"
+mkdir -p "metrics/$exp"
+scp fledger:experiments/assembled.metrics latest.metrics
+filename=metrics/$exp/$(date -d "today" +"%Y-%m-%d-%H%M%S").metrics
+cp latest.metrics "$filename"

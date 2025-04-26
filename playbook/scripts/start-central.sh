@@ -7,7 +7,7 @@ cp ~/flrealm.service /etc/systemd/system/ || exit 1
 echo "[starting services]"
 systemctl daemon-reload
 
-source "$HOME/env.systemd/central"
+source "$HOME/central"
 
 if test "$FLSIGNAL" = "true"; then
   echo "flsignal ==> starting"
@@ -18,7 +18,7 @@ fi
 
 if test "$FLREALM" = "true"; then
   echo "flrealm ==> starting"
+  systemctl restart flrealm
 else
   echo "flrealm ==> is disabled"
-  systemctl restart flrealm
 fi
