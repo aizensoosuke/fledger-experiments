@@ -2,51 +2,59 @@
 
 ## Generalities
 
-Those experiments are meant to be run on sphere.
+Those experiments are made for sphere.
 
-Each is composed of:
+An experiment is defined by two things :
 
-- A README (`README.md`)
-- A mergeTB model (`model.py`)
-- An ansible playbook (`playbook.yaml`)
-- The ansible inventory (`hosts`)
-- Oneshot systemd services to run the actual nodes
+- The network topology it uses (see networks)
+- An environment for each node in the topology
 
-And sometimes:
+Each network is defined in `networks/` by:
 
-- A plantUML sequence diagram of the experiment (`explanation.puml`, `explanation.png`)
-- A plantUML network diagram (`network.puml`, `network.png`)
+- The merge model file `model.py`
+- The ansible inventory for that topology `hosts`
 
-The services can either be ran synchronously (ansible blocks) or asynchronously
-(ansible starts the node and goes to the next task).
-Check `exp1-dummy` for an example of both
-(fledger-send is blocking and fledger-recv is non-blocking).
+Each experiment is defined in `expXX-...` by:
 
-## Create hosts file for a new experiment
+- The configuration of the node, i.e. how many instances there are on that node and what they do
+- The env, which (for now) only says which topology that experiment runs on
+- An explanation (README)
 
-When creating a new experiment, there is a simple (but imperfect) command to generate the hosts file.
-It's `mrg nodes generate inventory expX.fledger.abehsser > hosts`
+The **configure.sh file** is mostly what matters for each experiment.
 
-- abehsser is the project name
-- fledger the experiment name
-- expX the reservation name).
+### Inner workings
 
-You'll need to modify it to:
+Experiments are ran using ansible.
+The ansible playbook and scripts used by the playbook are generic,
+the same files / templates are used for all the experiments.
+Those files are all in `playbook/` :
 
-1. Group the nodes together in a \[nodes\] group.
-2. Put the central server  in a \[central\] group.
-3. Remove the router.
+- `default.yaml`: the playbook used by all experiments
+- `fledger.service`: the template service for an instance of fledger in a node
+- `flsignal.service`, `flrealm.service`: the services for the central node
+- `scripts/*`: scripts used by the playbook e.g to start and stop instances on nodes
+
+The files in `xdc/` serve two purposes:
+
+- `exp` is used to run an experiment, it's called by run.sh
+- the other files are used for scripts I wrote that are not necessary for running the experiments.
+  those scripts are not included here.
 
 ## Running experiments
 
 ### Setup mergeTB
 
-Read the documentation and do the hello world.
+Before doing any of this, you should read the
+[merge documentation](https://mergetb.gitlab.io/testbeds/sphere/sphere-docs/docs/experimentation/) and do the
+[hello world](https://mergetb.gitlab.io/testbeds/sphere/sphere-docs/docs/experimentation/hello-world/).
 
 Then, create one XDC to be used for all experiments.
 Use this SSH configuration (read the documentation before using it):
 
 ```bash
+# ~/.ssh/config
+# Don't forget to replace the values for `YOUR_USER` and `SSH_NAME_FROM_SPHERE`.
+
 Host sphere
  Hostname jump.sphere-testbed.net
  Port 2022
@@ -61,14 +69,9 @@ Host sphere-fledger
  Hostname SSH_NAME_FROM_SPHERE
 ```
 
-Don't forget to replace the values for `YOUR_USER` and `SSH_NAME_FROM_SPHERE`.
-
 On the XDC, install ansible (use the ansible/ansible apt ppa!).
 
-Then install ansible's prometheus collection with
-`ansible-galaxy collection install prometheus.prometheus`
-
-Configure ansible with this `~/.ansible.cfg` from the documentation :
+Configure ansible on the XDC with this `~/.ansible.cfg` from the documentation :
 
 ```bash
 [defaults]
@@ -94,18 +97,39 @@ pipelining = True
 control_path_dir = /tmp/ansible/cp
 ```
 
-### Activate the nodes and attach the XDC
+Run the command `setup-xdc.sh` at the root of the repo to finish setting up the XDC.
 
-Use the model.py to create the reservation and the activation (materialization).
-Attach your XDC to the materialization.
+Check the top of the file "run.sh" and verify your username and project name.
 
-### Deploy and run
+### Deploy binaries
 
-- Go to the root of the project on your local machine.
-- Activate devbox with `devbox shell`.
-- Run `make deploy_experiments_binaries` to
-compile and upload the binaries to the XDC.
-- Run `make deploy_experiments` to upload the experiment files as well.
-- SSH into your XDC.
-- Go to the experiment's folder.
-- Run `ansible-playbook -i hosts playbook.yaml`
+This repository only contains the experiments, not the binaries.
+To compile those and upload them to the XDC, go to the code repository and run `devbox shell && make deploy` on that repo.
+
+### Run the experiment
+
+Run `./run.sh exp01-onechat2` to run the experiment `exp01-onechat2`.
+
+This will **automatically**:
+
+- Find which network this runs on
+- Compile, push, realize, materialize the corresponding model
+- Attach the materialization to your XDC
+- Upload the experiment files to the XDC with rsync
+- SSH into the XDC and run the experiment using ansible
+- Download the metrics generated by all the nodes in `latest.metrics``
+
+## Create hosts file for a new experiment
+
+When creating a new experiment, there is a simple (but imperfect) command to generate the hosts file.
+It's `mrg nodes generate inventory expX.fledger.abehsser > hosts`
+
+- abehsser is the project name
+- fledger the experiment name
+- expX the reservation name).
+
+You'll need to modify it to:
+
+1. Group the nodes together in a \[nodes\] group.
+2. Put the central server  in a \[central\] group.
+3. Remove the router.
