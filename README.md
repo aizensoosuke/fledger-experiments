@@ -110,6 +110,8 @@ To compile those and upload them to the XDC, go to the code repository and run `
 
 Run `./run.sh exp01-onechat2` to run the experiment `exp01-onechat2`.
 
+For some experiments, you can vary the network o which it runs by changing it in the experiment's `env` file.
+
 This will **automatically**:
 
 - Find which network this runs on

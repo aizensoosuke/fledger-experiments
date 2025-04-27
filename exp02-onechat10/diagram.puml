@@ -1,17 +1,3 @@
-# Exp2 dummy10
-
-Run 10 nodes, fully interconnected.
-
-Each node broadcasts a message (destined to a single node),
-and waits for a message from one specific other node.
-
-The playbook succeeds if all nodes receive their message,
-and fails if the timeout of 120s is reached.
-
-## PlantUML diagram
-
-```plantuml
-@startuml
 participant "Node A (1)" as A
 participant "Node B (2)" as B
 participant "Node C (3)" as C
@@ -50,4 +36,3 @@ rnote across
   //iff corresponding message received//
 endrnote
 @enduml
-```
