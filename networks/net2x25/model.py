@@ -4,7 +4,7 @@ net = Network('net2x25', routing == static)
 
 def makeNode(i: int):
     name = f"n{i}"
-    return net.node(name, proc.cores>=1, memory.capacity>=mb(512))
+    return net.node(name, proc.cores>=1, memory.capacity>=mb(1024))
 
 sna = [makeNode(i) for i in range(25)]
 snb = [makeNode(i) for i in range(25, 50)]

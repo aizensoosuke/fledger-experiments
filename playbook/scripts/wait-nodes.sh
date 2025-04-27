@@ -2,7 +2,7 @@
 
 DELAY=0.5
 
-instances=$(grep ~/env.systemd -e '^WAIT=true$' -rl | xargs -0 -n1 basename)
+instances=$(grep ~/env.systemd -e '^WAIT=true$' -rl | xargs -n1 basename)
 
 echo "Instances that we must wait for: $instances"
 

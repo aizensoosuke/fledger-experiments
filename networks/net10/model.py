@@ -15,7 +15,7 @@ link = net.connect(sna, capacity==mbps(1), latency==ms(10))
 
 for i in range(10):
     suffix = str(i + 1)
-    link[sna[i]].socket.addrs = ip4(f"10.0.0.{suffix}/24")
-link[central].socket.addrs = ip4("10.0.0.128/24")
+    link[sna[i]].socket.addrs = ip4(f"10.0.0.{suffix}/16")
+link[central].socket.addrs = ip4("10.0.128.128/16")
 
 experiment(net)

@@ -4,7 +4,7 @@ net = Network('net4x25', routing == static)
 
 def makeNode(i: int):
     name = f"n{i}"
-    return net.node(name, proc.cores>=1, memory.capacity>=mb(512))
+    return net.node(name, proc.cores>=1, memory.capacity>=mb(1024))
 
 lans = [
     [makeNode(i) for i in range(25)],
@@ -13,11 +13,11 @@ lans = [
     [makeNode(i) for i in range(75, 100)]
 ]
 
-router01 = net.node('router01', proc.cores>=1, memory.capacity>=mb(512))
-router12 = net.node('router12', proc.cores>=1, memory.capacity>=mb(512))
-router23 = net.node('router23', proc.cores>=1, memory.capacity>=mb(512))
+router01 = net.node('router01', proc.cores>=1, memory.capacity>=mb(1024))
+router12 = net.node('router12', proc.cores>=1, memory.capacity>=mb(1024))
+router23 = net.node('router23', proc.cores>=1, memory.capacity>=mb(1024))
 
-central = net.node('central', proc.cores>=2, memory.capacity>=mb(512))
+central = net.node('central', proc.cores>=2, memory.capacity>=mb(1024))
 
 lans[0].extend([router01])
 lans[1].extend([router01, router12])

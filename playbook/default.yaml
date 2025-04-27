@@ -77,6 +77,11 @@
 
     - name: Wait for simulation end
       ansible.builtin.script: ../playbook/scripts/wait-nodes.sh
+      register: wait_nodes
+
+    # - name: Debug
+    #   ansible.builtin.debug:
+    #     msg: "{{ wait_nodes.stdout_lines }}"
 
 
 # Must remain separate so it runs even if the simulation fails

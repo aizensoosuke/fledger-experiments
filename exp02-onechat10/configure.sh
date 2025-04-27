@@ -20,7 +20,7 @@ for i in $(seq 0 9); do
   recv_msg="${messages[$i]}"
 
   {
-    echo "CENTRAL_HOST=10.0.0.128"
+    echo "CENTRAL_HOST=10.0.128.128"
     echo "NODE_NAME=fledger-${nodename}-0"
     echo "NODE_CMD=simulation --print-new-messages chat --recv-msg '$recv_msg' --send-msg '$send_msg'"
     echo "WAIT=true"
