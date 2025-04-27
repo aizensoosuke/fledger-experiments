@@ -12,8 +12,8 @@ snb = [makeNode(i) for i in range(25, 50)]
 router = net.node('router', proc.cores>=1, memory.capacity>=mb(512))
 central = net.node('central', proc.cores>=2, memory.capacity>=mb(512))
 
-sna.extend([router, central])
-snb.extend([router, central])
+sna.extend([router])
+snb.extend([router])
 
 linka = net.connect(sna, capacity==mbps(100), latency==ms(10))
 linkb = net.connect(snb, capacity==mbps(100), latency==ms(10))
@@ -21,8 +21,9 @@ linkb = net.connect(snb, capacity==mbps(100), latency==ms(10))
 linka[router].socket.addrs = ip4("10.0.0.1/24")
 linkb[router].socket.addrs = ip4("10.0.1.1/24")
 
-linka[central].socket.addrs = ip4("10.0.0.128/24")
-linkb[central].socket.addrs = ip4("10.0.1.128/24")
+centralLink = net.connect([router, central])
+centralLink[central].socket.addrs = ip4(f"10.0.128.128/24")
+centralLink[router].socket.addrs = ip4(f"10.0.128.1/24")
 
 for i in range(25):
     suffix = str(i + 2)

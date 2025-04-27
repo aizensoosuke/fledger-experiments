@@ -3,7 +3,7 @@
 mkdir -p env.systemd
 
 amount=10
-pernode=2
+pernode=5
 
 for i in $(seq 0 $((amount - 1))); do
   node="n${i}"

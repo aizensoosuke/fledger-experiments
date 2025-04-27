@@ -2,8 +2,8 @@
 
 mkdir -p env.systemd
 
-amount=100
-pernode=2
+amount=$(grep -e "NODE_AMOUNT=" env | sed -e 's/NODE_AMOUNT=//')
+pernode=$(grep -e "INSTANCES_PER_NODE=" env | sed -e 's/INSTANCES_PER_NODE=//')
 
 for i in $(seq 0 $((amount - 1))); do
   node="n${i}"
