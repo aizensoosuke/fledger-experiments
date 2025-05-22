@@ -3,6 +3,11 @@
 # CHANGE THESE
 project="fledger"
 username="abehsser"
+
+INFLUX_HOST="https://influxdb.abehssera.com"
+INFLUX_ORG="fledger"
+INFLUX_TOKEN="i9eFePFcoFKLjGNlYgY090_CULrCPEmNE_8ZlY8rLL7MUNywcBJVTKNe9B8Cv-H5DzUHTTz_tMi1VoAuBzkSQA=="
+INFLUX_BUCKET="fledger-demo"
 # END CHANGE THESE
 
 exp="$1"
@@ -57,7 +62,20 @@ echo "[run experiment]"
 ssh -tt fledger "bash -c 'cd experiments && source /home/abehsser/.bash_profile && exp $exp'"
 
 echo "[download metrics]"
+echo "compress..."
+ssh fledger "bash -c 'cd ~/experiments && rm -f metrics.tar.gz && tar -czf metrics.tar.gz assembled.metrics'"
+
+echo "download..."
 mkdir -p "metrics/$exp"
-scp fledger:experiments/assembled.metrics latest.metrics
+scp fledger:experiments/metrics.tar.gz .
+
+echo "uncompress..."
+tar -xf metrics.tar.gz
+
+mv assembled.metrics latest.metrics
 filename=metrics/$exp/$(date -d "today" +"%Y-%m-%d-%H%M%S").metrics
 cp latest.metrics "$filename"
+echo "...archived to $filename"
+
+echo "[upload metrics to influxdb]"
+influx write --host "$INFLUX_HOST" --org "$INFLUX_ORG" --token "$INFLUX_TOKEN" --bucket "$INFLUX_BUCKET" --file latest.metrics --debug
