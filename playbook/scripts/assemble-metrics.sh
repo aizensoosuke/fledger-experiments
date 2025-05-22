@@ -10,7 +10,7 @@ if test -z "$instances"; then
 fi
 
 echo "[gather metrics]"
-touch "$assembledmetrics" || exit 1
+echo "" >"$assembledmetrics"
 
 for instance in $instances; do
   echo "$instance"
