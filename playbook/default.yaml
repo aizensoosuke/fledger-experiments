@@ -20,14 +20,18 @@
     - name: Stop nodes
       ansible.builtin.script: ../playbook/scripts/stop-nodes.sh
 
-    - name: Copy files
+    - name: Copy service
       ansible.builtin.copy:
-        src: "{{ item }}"
+        src: ../playbook/fledger.service
         dest: ~/
         mode: preserve
-      loop:
-        - ~/fledger
-        - ../playbook/fledger.service
+
+    - name: Download fledger
+      ansible.builtin.uri:
+        url: http://192.168.254.2/fledger
+        dest: ~/fledger
+        mode: "0755"
+        force: true
 
     - name: Copy environment
       ansible.builtin.copy:
@@ -57,11 +61,19 @@
         dest: ~/
         mode: preserve
       loop:
-        - ~/fledger
-        - ~/flsignal
         - ../playbook/flsignal.service
         - ../playbook/flrealm.service
         - env.systemd/central
+
+    - name: Download binaries
+      ansible.builtin.uri:
+        url: "http://192.168.254.2/{{ item }}"
+        dest: "~/{{ item }}"
+        mode: "0755"
+        force: true
+      loop:
+        - fledger
+        - flsignal
 
     - name: Start central
       ansible.builtin.script: ../playbook/scripts/start-central.sh
@@ -70,7 +82,6 @@
 - name: Run the simulation
   hosts: nodes
   become: true
-  timeout: 300
   tasks:
     - name: Start nodes
       ansible.builtin.script: ../playbook/scripts/start-nodes.sh
@@ -91,6 +102,11 @@
   tasks:
     - name: Assemble metrics on node
       ansible.builtin.script: ../playbook/scripts/assemble-metrics.sh
+
+    - name: Remove old metrics
+      ansible.builtin.file:
+        path: ../metrics/
+        state: absent
 
     - name: Download metrics
       ansible.builtin.fetch:
