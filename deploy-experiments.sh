@@ -6,4 +6,4 @@ if test "$#" -ne 0; then
 fi
 
 echo "Rsyncing experiment files..."
-rsync -avh --delete --exclude ".*" --exclude "metrics" --exclude "*.metrics" --info=progress2 ./ sphere-fledger:~/experiments/
+rsync -avh --delete --exclude ".*" --exclude "metrics" --exclude "*.metrics" --info=progress2 ./ fledger:~/experiments/
