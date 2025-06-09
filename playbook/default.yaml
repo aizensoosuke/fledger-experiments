@@ -32,6 +32,9 @@
         dest: ~/fledger
         mode: "0755"
         force: true
+        status_code:
+          - 200
+          - 304
 
     - name: Copy environment
       ansible.builtin.copy:
@@ -71,6 +74,9 @@
         dest: "~/{{ item }}"
         mode: "0755"
         force: true
+        status_code:
+          - 200
+          - 304
       loop:
         - fledger
         - flsignal
@@ -94,6 +100,20 @@
     #   ansible.builtin.debug:
     #     msg: "{{ wait_nodes.stdout_lines }}"
 
+- name: Prepare metrics
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Remove old metrics
+      ansible.builtin.file:
+        path: ../metrics/
+        state: absent
+
+    - name: Create metrics folder
+      ansible.builtin.file:
+        path: ../metrics/
+        state: directory
+        mode: "755"
 
 # Must remain separate so it runs even if the simulation fails
 - name: Download metrics
@@ -102,11 +122,6 @@
   tasks:
     - name: Assemble metrics on node
       ansible.builtin.script: ../playbook/scripts/assemble-metrics.sh
-
-    - name: Remove old metrics
-      ansible.builtin.file:
-        path: ../metrics/
-        state: absent
 
     - name: Download metrics
       ansible.builtin.fetch:
