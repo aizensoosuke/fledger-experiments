@@ -6,28 +6,62 @@
 ###
 ### ALL OTHER INSTANCES: fetch page
 
-mkdir -p env.systemd
+ENV_FOLDER="env.systemd"
+FLAT="false"
+if test -n "$1"; then
+  ENV_FOLDER="$1"
+  FLAT="true"
+fi
 
-amount=$(grep -e "NODE_AMOUNT=" env | sed -e 's/NODE_AMOUNT=//')
-pernode=$(grep -e "INSTANCES_PER_NODE=" env | sed -e 's/INSTANCES_PER_NODE=//')
-malicious_percent=$(grep -e "MALICIOUS_PERCENT=" env | sed -e 's/MALICIOUS_PERCENT=//')
-malicious_amount=$((amount * pernode * malicious_percent / 100))
+mkdir -p "$ENV_FOLDER"
 
-for i in $(seq 0 $((amount - 1))); do
+NODE_AMOUNT=$(grep -e "NODE_AMOUNT=" env | sed -e 's/NODE_AMOUNT=//')
+INSTANCES_PER_NODE=$(grep -e "INSTANCES_PER_NODE=" env | sed -e 's/INSTANCES_PER_NODE=//')
+
+LOOP_DELAY=1000
+CENTRAL_HOST=10.0.128.128
+
+MALICIOUS_PERCENT=0
+MALICIOUS_AMOUNT=$((NODE_AMOUNT * INSTANCES_PER_NODE * MALICIOUS_PERCENT / 100))
+
+# Either 48 pages of 10k chars, or 110 pages of 5k chars
+FILLER_AMOUNT=110
+PAGE_SIZE=5000 # size of both filler pages and target page
+
+BOOTWAIT_MAX=5000             # randomize instance start time so that they don't all start together
+CONNECTION_DELAY=20000        # time before filler pages are created
+PAGES_PROPAGATION_DELAY=40000 # time before target page is created
+TIMEOUT_MS=300000             # timeout for each instance
+
+REALM_SIZE=100000
+REALM_FLO_SIZE=100000
+
+EXPERIMENT_ID=$(grep -e "EXPERIMENT_ID=" env | sed -e 's/EXPERIMENT_ID=//')
+echo "id@fledger.yohan.ch: [$EXPERIMENT_ID]"
+
+for i in $(seq 0 $((NODE_AMOUNT - 1))); do
   node="n${i}"
-  mkdir -p "env.systemd/$node"
+  if test "$FLAT" = "false"; then
+    mkdir -p "$ENV_FOLDER/$node"
+  fi
 
-  for j in $(seq 0 $((pernode - 1))); do
-    instance="fledger-$node-$j"
-    current_instance=$((i * pernode + j))
-    cmd="--bootwait-max 3000 simulation fetch-page --timeout-ms 20000"
-    if test $current_instance -le $malicious_amount; then
+  for j in $(seq 0 $((INSTANCES_PER_NODE - 1))); do
+    instance="fledger-n$i-$j"
+    if test "$i" -le 9; then
+      instance="fledger-n0$i-$j"
+    fi
+    current_instance=$((i * INSTANCES_PER_NODE + j))
+    cmd="--bootwait-max $BOOTWAIT_MAX simulation dht-fetch-target --timeout-ms $TIMEOUT_MS --experiment-id $EXPERIMENT_ID --enable-sync"
+    if test $current_instance -le $MALICIOUS_AMOUNT; then
       cmd="--evil-noforward $cmd"
     fi
 
-    envfile="env.systemd/$node/$instance"
+    envfile="$ENV_FOLDER/$node/$instance"
+    if test "$FLAT" = "true"; then
+      envfile="$ENV_FOLDER/$instance"
+    fi
     {
-      echo "CENTRAL_HOST=10.0.128.128"
+      echo "CENTRAL_HOST=$CENTRAL_HOST"
       echo "NODE_NAME=$instance"
       echo "NODE_CMD=$cmd"
       echo "RUST_BACKTRACE=full"
@@ -36,35 +70,37 @@ for i in $(seq 0 $((amount - 1))); do
   done
 done
 
-create_page_cmd="--sampling-rate-ms 1000 simulation create-page-with-fillers --filler-amount 110 --page-size 5000 --settling-delay 5000" # corresponding flo size: 1911 B
-create_realm_cmd="realm create simulation 100000 100000"
+create_page_cmd="--loop-delay $LOOP_DELAY simulation dht-create-fillers-and-target --filler-amount $FILLER_AMOUNT --page-size $PAGE_SIZE --connection-delay $CONNECTION_DELAY --pages-propagation-delay $PAGES_PROPAGATION_DELAY"
+create_realm_cmd="realm create simulation $REALM_SIZE $REALM_FLO_SIZE --cond-pass"
 
-if test "$malicious_percent" = "100"; then
+if test "$MALICIOUS_PERCENT" = "100"; then
   create_page_cmd="--evil-noforward $create_page_cmd"
   create_realm_cmd="--evil-noforward $create_realm_cmd"
 fi
 
-# override fledger-n0-0
+# override fledger-n00-0
 # it will create the tag
-node=n0
-j=0
-instance="fledger-$node-$j"
-envfile="env.systemd/$node/$instance"
+instance="fledger-n00-0"
+envfile="$ENV_FOLDER/n0/$instance"
+if test "$FLAT" = "true"; then
+  envfile="$ENV_FOLDER/$instance"
+fi
 {
-  echo "CENTRAL_HOST=10.0.128.128"
+  echo "CENTRAL_HOST=$CENTRAL_HOST"
   echo "NODE_NAME=$instance"
   echo "NODE_CMD=$create_page_cmd"
   echo "WAIT=false"
 } >"$envfile"
 
-# override fledger-n0-1
+# override fledger-n00-1
 # it will create the realm
-node=n0
-j=1
-instance="fledger-$node-$j"
-envfile="env.systemd/$node/$instance"
+instance="fledger-n00-1"
+envfile="$ENV_FOLDER/n0/$instance"
+if test "$FLAT" = "true"; then
+  envfile="$ENV_FOLDER/$instance"
+fi
 {
-  echo "CENTRAL_HOST=10.0.128.128"
+  echo "CENTRAL_HOST=$CENTRAL_HOST"
   echo "NODE_NAME=$instance"
   # echo "NODE_CMD=realm create simulation 19000 5734" # 10 flos @ 1911 B => 19111 B /// 1 flo @ 1911 B (times 3 + 1) => 5734 B
   # flo sizes are kind of broken - experimentally 10 filler pages of size 512 B each go to around 17kB
@@ -75,4 +111,4 @@ envfile="env.systemd/$node/$instance"
 {
   echo "FLSIGNAL=true"
   echo "FLREALM=false"
-} >"env.systemd/central"
+} >"$ENV_FOLDER/central"
