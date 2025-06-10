@@ -21,16 +21,17 @@ INSTANCES_PER_NODE=$(grep -e "INSTANCES_PER_NODE=" env | sed -e 's/INSTANCES_PER
 LOOP_DELAY=1000
 CENTRAL_HOST=10.0.128.128
 
-MALICIOUS_PERCENT=0
+MALICIOUS_PERCENT=30
 MALICIOUS_AMOUNT=$((NODE_AMOUNT * INSTANCES_PER_NODE * MALICIOUS_PERCENT / 100))
 
 # Either 48 pages of 10k chars, or 110 pages of 5k chars
 FILLER_AMOUNT=110
 PAGE_SIZE=5000 # size of both filler pages and target page
 
+ENABLE_SYNC="--enable-sync"   # empty or "--enable-sync"
 BOOTWAIT_MAX=5000             # randomize instance start time so that they don't all start together
 CONNECTION_DELAY=20000        # time before filler pages are created
-PAGES_PROPAGATION_DELAY=40000 # time before target page is created
+PAGES_PROPAGATION_DELAY=10000 # time before target page is created
 TIMEOUT_MS=300000             # timeout for each instance
 
 REALM_SIZE=100000
@@ -51,7 +52,7 @@ for i in $(seq 0 $((NODE_AMOUNT - 1))); do
       instance="fledger-n0$i-$j"
     fi
     current_instance=$((i * INSTANCES_PER_NODE + j))
-    cmd="--bootwait-max $BOOTWAIT_MAX simulation dht-fetch-target --timeout-ms $TIMEOUT_MS --experiment-id $EXPERIMENT_ID --enable-sync"
+    cmd="--bootwait-max $BOOTWAIT_MAX simulation dht-fetch-target --timeout-ms $TIMEOUT_MS --experiment-id $EXPERIMENT_ID $ENABLE_SYNC"
     if test $current_instance -le $MALICIOUS_AMOUNT; then
       cmd="--evil-noforward $cmd"
     fi
@@ -70,7 +71,7 @@ for i in $(seq 0 $((NODE_AMOUNT - 1))); do
   done
 done
 
-create_page_cmd="--loop-delay $LOOP_DELAY simulation dht-create-fillers-and-target --filler-amount $FILLER_AMOUNT --page-size $PAGE_SIZE --connection-delay $CONNECTION_DELAY --pages-propagation-delay $PAGES_PROPAGATION_DELAY"
+create_page_cmd="--loop-delay $LOOP_DELAY simulation dht-create-fillers-and-target --filler-amount $FILLER_AMOUNT --page-size $PAGE_SIZE --connection-delay $CONNECTION_DELAY --pages-propagation-delay $PAGES_PROPAGATION_DELAY --experiment-id $EXPERIMENT_ID"
 create_realm_cmd="realm create simulation $REALM_SIZE $REALM_FLO_SIZE --cond-pass"
 
 if test "$MALICIOUS_PERCENT" = "100"; then
