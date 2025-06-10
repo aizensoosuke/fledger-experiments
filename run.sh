@@ -1,54 +1,15 @@
 #!/bin/bash
 
-# CHANGE THESE
-SPHERE_PROJECT="fledger"
-SPHERE_USERNAME="abehsser"
-# END CHANGE THESE
+set -euo pipefail
 
 EXP="$1"
 NET=$(grep -e "NETWORK=" "$EXP/env" | sed -e 's/NETWORK=//')
-REALIZATION="$NET.$SPHERE_PROJECT.$SPHERE_USERNAME"
 
 echo "Running experiment [$EXP] on network [$NET]"
 echo
 
-currentnet=$(cat attached-net)
-
-if test -z "$currentnet" || test "$currentnet" != "$NET"; then
-  echo "INFO: Network [$NET] is not deployed or attached. Deploying and/or attaching..."
-  echo "    Checking if $REALIZATION exists..."
-  mrg show realization "$REALIZATION"
-
-  if test $? -eq 0; then
-    echo "    Realization exists, attaching..."
-    mrg xdc detach fledger.abehsser >/dev/null || exit 1
-    mrg xdc attach fledger.abehsser "$REALIZATION" >/dev/null || {
-      echo "FATAL: could not attach realization"
-      exit 1
-    }
-  else
-    echo "    Realization not found, deploying network..."
-    read -r -p "    Deploy network $NET (y/n)? " choice
-    case "$choice" in
-    y | Y) echo "yes" ;;
-    n | N)
-      echo "no"
-      exit 0
-      ;;
-    *)
-      echo "invalid"
-      exit 1
-      ;;
-    esac
-
-    ./deploy-network.sh "./networks/$NET" || exit 1
-  fi
-  echo "INFO: Network deployed and attached."
-  echo "$NET" >./attached-net
-else
-  echo "INFO: Network [$NET] is already attached."
-  echo "   NOTE: If the network is not actually attached, please empty the file \`attached-net\`"
-fi
+echo [deploy network]
+./deploy-network.sh "networks/$NET"
 
 echo "[create experiment for dashboard]"
 FILLER_AMOUNT=$(grep -e "FILLER_AMOUNT=" "$EXP/configure.sh" | sed -e 's/FILLER_AMOUNT=//')

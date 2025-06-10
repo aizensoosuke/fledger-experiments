@@ -1,0 +1,6 @@
+SPHERE_PROJECT=fledger
+SPHERE_USERNAME=abehsser
+
+# this is the sphere repo containing model.py
+# it is required to upload models to sphere
+SPHERE_REPO=/home/llama/fledger/fledger-sphere/
