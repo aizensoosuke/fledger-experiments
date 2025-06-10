@@ -3,11 +3,6 @@
 # CHANGE THESE
 SPHERE_PROJECT="fledger"
 SPHERE_USERNAME="abehsser"
-
-INFLUX_HOST="https://influxdb.abehssera.com"
-INFLUX_ORG="fledger"
-INFLUX_TOKEN="F7y_RJHnXA0szQHDhEiuRDAw7B2etGywSc-wdMK-BJtkXwplqXe5ogCcXDEJJR18ZvWJ87kwxckl6n1lFu9B-Q=="
-INFLUX_BUCKET="fledger"
 # END CHANGE THESE
 
 EXP="$1"
@@ -73,28 +68,7 @@ make
 echo "[run experiment]"
 ssh -tt fledger "bash -c 'cd experiments && source /home/abehsser/.bash_profile && exp $EXP'"
 
+echo "[end]"
 curl "https://fledger.yohan.ch/api/experiments/${EXPERIMENT_ID}/end" \
   -H 'Authorization: Bearer 1|d4EeHkRPlqwpgLpALyTor5FxHI4NWg1LXJtf5NZBfd82aa17' \
   -H 'Accept: application/json'
-
-echo "[download metrics]"
-echo "compress..."
-ssh fledger "bash -c 'cd ~/experiments && rm -f metrics.tar.gz && tar -czf metrics.tar.gz assembled.metrics'"
-
-echo "download..."
-mkdir -p "metrics/$EXP"
-scp fledger:experiments/metrics.tar.gz .
-
-echo "uncompress..."
-tar -xf metrics.tar.gz
-
-mv assembled.metrics latest.metrics
-filename=metrics/$EXP/$(date -d "today" +"%Y-%m-%d-%H%M%S").metrics
-cp latest.metrics "$filename"
-echo "...archived to $filename"
-
-echo "[delete old metrics from influxdb]"
-influx delete --org "$INFLUX_ORG" --bucket "$INFLUX_BUCKET" --token "$INFLUX_TOKEN" --host "$INFLUX_HOST" --start 2025-01-01T00:00:00Z --stop "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-echo "[upload metrics to influxdb]"
-influx write --host "$INFLUX_HOST" --org "$INFLUX_ORG" --token "$INFLUX_TOKEN" --bucket "$INFLUX_BUCKET" --file latest.metrics --debug
