@@ -1,2 +1,5 @@
-deploy:
-	@./deploy-experiments.sh
+run:
+	@./run.sh
+
+fleet:
+	@./fleet.sh
