@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Running fleet..."
+
+net_name="$1"
+fleet_id="$2"
+vm_amount="$3"
+bots_per_vm="$4"
+
+echo "Running fleet on net [$net_name]"
+echo "fleet_id: $fleet_id"
+echo "vm_amount: $vm_amount"
+echo "bots_per_vm: $bots_per_vm"
+echo "aborting..."
+exit 1

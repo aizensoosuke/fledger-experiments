@@ -1,0 +1,62 @@
+- name: Run bot on nodes
+  hosts: nodes
+  become: true
+  tasks:
+    - name: Copy service
+      ansible.builtin.copy:
+        src: bot.service
+        dest: ~/
+        mode: preserve
+
+    - name: Download fledger
+      ansible.builtin.uri:
+        url: http://192.168.254.2/fledger
+        dest: ~/fledger
+        mode: "0755"
+        force: true
+        status_code:
+          - 200
+          - 304
+
+    - name: Start bot
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: fledger-bot
+        state: 'restarted'
+
+- name: Run bot on central node
+  hosts: central
+  become: true
+  tasks:
+    - name: Disable ip forwarding
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: 0
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Copy service
+      ansible.builtin.copy:
+        src: bot.service
+        dest: ~/
+        mode: preserve
+
+    - name: Download binaries
+      ansible.builtin.uri:
+        url: "http://192.168.254.2/{{ item }}"
+        dest: "~/{{ item }}"
+        mode: "0755"
+        force: true
+        status_code:
+          - 200
+          - 304
+      loop:
+        - fledger
+        - flsignal
+
+    - name: Start bot
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: fledger-bot
+        state: 'restarted'
