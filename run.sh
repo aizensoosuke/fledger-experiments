@@ -5,7 +5,7 @@ set -euo pipefail
 function get_env {
   name="$1"
   env_file="./env"
-  if test -n "$2"; then
+  if test "$#" -gt 1; then
     env_file="$2"
   fi
   value=$(grep -e "$name=" "$env_file" | sed -e "s/$name=//")
@@ -22,10 +22,20 @@ function set_env {
   sed -i -e "s/^$name=.*$/$name=$value/" "$env_file"
 }
 
-exp_dir="$1"
+function choose_exp {
+  exp_list=$(ls -d exp*)
+  select exp in $exp_list; do
+    echo "$exp"
+    break
+  done
+}
+
+exp_dir=$(choose_exp)
 env_file="$exp_dir/env"
 net_name=$(get_env NETWORK "$env_file")
 filler_amount=$(get_env FILLER_AMOUNT "$exp_dir/configure.sh")
+target_amount=$(get_env TARGET_AMOUNT "$exp_dir/configure.sh")
+targets_per_node=$(get_env TARGETS_PER_NODE "$exp_dir/env")
 hermes_url=$(get_env HERMES_URL)
 hermes_token=$(get_env HERMES_TOKEN)
 
@@ -58,7 +68,7 @@ function hermes_create_experiment {
   experiment_id=$(
     hermes_post \
       "$hermes_url/api/experiments" \
-      "name=$exp_dir&pages_amount=$filler_amount" |
+      "name=$exp_dir&filler_amount=$filler_amount&target_amount=$target_amount&targets_per_node=$targets_per_node" |
       jq -r '.id'
   )
   set_env EXPERIMENT_ID "$experiment_id" "$env_file"
@@ -75,7 +85,7 @@ function run_experiment_on_xdc {
 
 function hermes_end_experiment {
   experiment_id=$(get_env EXPERIMENT_ID "$env_file")
-  hermes_get "$hermes_url/api/experiments/${experiment_id}/end"
+  hermes_get "$hermes_url/api/experiments/${experiment_id}/end" ""
 }
 
 function main {
